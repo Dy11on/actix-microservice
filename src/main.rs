@@ -9,7 +9,7 @@ use diesel::mysql::MysqlConnection;
 use dotenv::dotenv;
 use std::env;
 use self::models::*;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 
 pub mod schema;
@@ -55,8 +55,13 @@ async fn manual_hello() -> impl Responder{
     HttpResponse::Ok().body("Hey There!")
 }
 
+#[derive(Serialize)]
+struct AllPosts{
+    posts: Vec<Post>,
+}
+
 #[get("/get_posts")]
-async fn query_data() -> impl Responder{
+async fn query_data() -> Result<HttpResponse> {
     
     use self::schema::posts::dsl::*;
 
@@ -67,14 +72,11 @@ async fn query_data() -> impl Responder{
         .load::<Post>(&connection)
         .expect("Error loading posts");
 
-    println!("Displaying {} posts", results.len());
-    for post in results{
-        println!("{}", post.title);
-        println!("-----------\n");
-        println!("{}", post.body);
-    }
 
-    HttpResponse::Ok().body("check cmd")
+    let hahe = serde_json::json!(results);
+    println!("im so cool");
+    Ok(HttpResponse::Ok().json(hahe))
+
 }
 
 #[derive(Deserialize)]
@@ -138,7 +140,7 @@ async fn delete_data(info: web::Json<Delete>) -> String{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-
+	
 
     HttpServer::new(||{
         App::new()
